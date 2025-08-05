@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from threading import Thread
 import logging
@@ -27,14 +28,15 @@ def status():
 
 def run():
     try:
-        app.run(host='0.0.0.0', port=8080, debug=False)
+        port = int(os.environ.get("PORT", 8080))
+        app.run(host='0.0.0.0', port=port, debug=False)
     except Exception as e:
         print(f"Erreur serveur Flask: {e}")
         time.sleep(5)
         run()  # Redémarre en cas d'erreur
 
 def keep_alive():
-    print("🔥 Serveur keep-alive démarré sur le port 8080")
+    print("🔥 Serveur keep-alive démarré")
     t = Thread(target=run)
     t.daemon = True
     t.start()
