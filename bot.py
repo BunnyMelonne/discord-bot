@@ -1,12 +1,17 @@
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from keep_alive import keep_alive  # <-- ajoute cette ligne
+from keep_alive import keep_alive
 import os
 
-load_dotenv(dotenv_path="config")
+# Charge les variables d'environnement depuis .env (en local) ou Render (en prod)
+load_dotenv()
+
+# Initialisation des intents (autorise la lecture des messages)
 intents = discord.Intents.default()
 intents.message_content = True
+
+# Création du bot
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
@@ -17,6 +22,12 @@ async def on_ready():
 async def ping(ctx):
     await ctx.send("Pong !")
 
-keep_alive()  # <-- lance le serveur Flask
+# Démarrage du serveur Flask pour Render
+keep_alive()
 
-bot.run(os.getenv("TOKEN"))
+# Démarrage du bot Discord
+token = os.getenv("TOKEN")
+if token:
+    bot.run(token)
+else:
+    print("❌ ERREUR : TOKEN non trouvé. Vérifie ton .env ou tes variables Render.")
