@@ -22,7 +22,7 @@ class Status(commands.Cog):
 
         latency = round(self.bot.latency * 1000)
         guild_count = len(self.bot.guilds)
-        user_count = sum(g.member_count for g in self.bot.guilds if g.member_count)
+        user_count = sum(1 for g in self.bot.guilds for m in g.members if not m.bot)
         command_count = len(self.bot.commands)
         python_version = platform.python_version()
         discord_version = discord.__version__
