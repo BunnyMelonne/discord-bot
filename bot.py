@@ -6,6 +6,8 @@ import os
 
 load_dotenv()
 
+GUILD_ID = 1014974215952281672
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
@@ -14,8 +16,14 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def setup_hook():
+    # Chargement des extensions
     await bot.load_extension("commands.status")
     await bot.load_extension("commands.hello")
+
+    # Sync locale des commandes slash sur le serveur spécifié
+    guild = discord.Object(id=GUILD_ID)
+    await bot.tree.sync(guild=guild)
+    print(f"Commandes slash synchronisées sur le serveur {GUILD_ID}.")
 
 @bot.event
 async def on_ready():
