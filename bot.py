@@ -17,7 +17,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Configure le logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("discord")
+logger = logging.getLogger(__name__)
 
 @bot.event
 async def setup_hook():
