@@ -8,8 +8,6 @@ import logging
 
 load_dotenv()
 
-GUILD_ID = 1014974215952281672
-
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
