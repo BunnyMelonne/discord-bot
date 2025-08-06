@@ -1,8 +1,14 @@
 import discord
 from discord.ext import commands
 import time
+import platform
 
 start_time = time.time()
+
+# === Paramètres personnalisés ===
+BOT_VERSION = "1.0.0"
+CREATOR = "Melonne#998191350807797830"
+INVITE_URL = "https://discord.com/oauth2/authorize?client_id=1402212878710476881&permissions=8&scope=bot"
 
 class Status(commands.Cog):
     def __init__(self, bot):
@@ -15,14 +21,30 @@ class Status(commands.Cog):
         minutes, seconds = divmod(remainder, 60)
 
         latency = round(self.bot.latency * 1000)
+        guild_count = len(self.bot.guilds)
+        user_count = sum(g.member_count for g in self.bot.guilds if g.member_count)
+        command_count = len(self.bot.commands)
+        python_version = platform.python_version()
+        discord_version = discord.__version__
+        os_name = platform.system()
 
         embed = discord.Embed(
             title="📡 Statut du bot",
+            description="Voici les informations sur le bot.",
             color=discord.Color.blurple()
         )
-        embed.add_field(name="Connecté en tant que", value=f"{self.bot.user}", inline=False)
-        embed.add_field(name="Ping", value=f"{latency} ms", inline=True)
-        embed.add_field(name="Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=True)
+        embed.add_field(name="👤 Connecté en tant que", value=f"{self.bot.user}", inline=False)
+        embed.add_field(name="📡 Ping", value=f"{latency} ms", inline=True)
+        embed.add_field(name="⏱️ Uptime", value=f"{hours}h {minutes}m {seconds}s", inline=True)
+        embed.add_field(name="🛠️ Version", value=BOT_VERSION, inline=True)
+        embed.add_field(name="📦 discord.py", value=discord_version, inline=True)
+        embed.add_field(name="⚙️ Python", value=python_version, inline=True)
+        embed.add_field(name="💻 Système", value=os_name, inline=True)
+        embed.add_field(name="🧑‍🤝‍🧑 Serveurs", value=f"{guild_count}", inline=True)
+        embed.add_field(name="👥 Utilisateurs", value=f"{user_count}", inline=True)
+        embed.add_field(name="📜 Commandes", value=f"{command_count}", inline=True)
+        embed.add_field(name="🧑 Créateur", value=CREATOR, inline=False)
+        embed.add_field(name="🔗 Lien d'invitation", value=f"[Clique ici]({INVITE_URL})", inline=False)
         embed.set_footer(text="BotRonron 🐱")
 
         await ctx.send(embed=embed)
