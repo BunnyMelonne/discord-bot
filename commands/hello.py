@@ -2,8 +2,6 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-GUILD_ID = 1014974215952281672
-
 class TimeoutView(discord.ui.View):
     def __init__(self, user):
         super().__init__(timeout=30)  # timeout en secondes
@@ -54,6 +52,3 @@ class Hello(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Hello(bot))
-    print(f"Sync des commandes sur le serveur {GUILD_ID}...")
-    await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
-    print("Sync locale terminée.")
