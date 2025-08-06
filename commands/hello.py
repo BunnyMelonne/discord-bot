@@ -3,36 +3,32 @@ from discord import app_commands
 from discord.ext import commands
 
 class TimeoutView(discord.ui.View):
-    def __init__(self, user):
-        super().__init__(timeout=30)  # timeout en secondes
-        self.user = user
-        self.message = None  # Pour garder la référence au message envoyé
+    def __init__(self):
+        super().__init__(timeout=180)
+        self.message = None
 
     async def on_timeout(self):
-        # Désactive tous les boutons quand le timeout arrive
-        for child in self.children:
-            child.disabled = True
-        
-        # Met à jour le message avec les boutons désactivés
-        if self.message:
-            await self.message.edit(view=self)
+        try:
+            if self.message:
+                await self.message.edit(view=None)
+        except discord.errors.NotFound:
+            pass
 
 class MultiButtonView(TimeoutView):
     def __init__(self, user):
-        super().__init__(user)
+        super().__init__()
+        self.user = user
 
     @discord.ui.button(label="Dire bonjour 👋", style=discord.ButtonStyle.primary)
     async def say_hello(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(
-            f"Salut {self.user.mention} ! 👋", 
-            ephemeral=True
+            f"Salut {self.user.mention} ! 👋", ephemeral=True
         )
 
     @discord.ui.button(label="Dire au revoir 👋", style=discord.ButtonStyle.secondary)
     async def say_bye(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(
-            f"Au revoir {self.user.mention} ! 👋", 
-            ephemeral=True
+            f"Au revoir {self.user.mention} ! 👋", ephemeral=True
         )
 
     @discord.ui.button(label="Supprimer le message ❌", style=discord.ButtonStyle.danger)
