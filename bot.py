@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 from dotenv import load_dotenv
 from keep_alive import keep_alive
 import os
@@ -19,28 +20,34 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Slash command ping
+@bot.tree.command(name="ping", description="Renvoie Pong !")
+async def ping(interaction: discord.Interaction):
+    await interaction.response.send_message("Pong !")
+
 @bot.event
 async def setup_hook():
     try:
+        # Charger tes autres extensions slash
         await bot.load_extension("commands.status")
         await bot.load_extension("commands.hello")
 
+        # Synchronisation des commandes slash sur ton serveur de test
         guild = discord.Object(id=GUILD_ID)
         await bot.tree.sync(guild=guild)
-        logger.info(f"Commandes slash synchronisées sur le serveur {GUILD_ID}.")
+
+        logger.info(f"✅ Commandes slash synchronisées sur le serveur {GUILD_ID}.")
     except Exception as e:
-        logger.error(f"Erreur lors du chargement des extensions ou sync : {e}")
+        logger.error(f"❌ Erreur lors du chargement des extensions ou sync : {e}")
 
 @bot.event
 async def on_ready():
-    logger.info(f"Bot connecté en tant que {bot.user}")
+    logger.info(f"🤖 Bot connecté en tant que {bot.user}")
 
-@bot.command()
-async def ping(ctx):
-    await ctx.send("Pong !")
-
+# Lance le serveur Flask pour Render
 keep_alive()
 
+# Démarre le bot Discord
 token = os.getenv("TOKEN")
 if token:
     bot.run(token)
