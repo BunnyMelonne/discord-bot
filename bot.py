@@ -13,6 +13,7 @@ intents.message_content = True
 
 # Création du bot
 bot = commands.Bot(command_prefix="!", intents=intents)
+bot.load_extension("commands.status")
 
 @bot.event
 async def on_ready():
@@ -21,10 +22,6 @@ async def on_ready():
 @bot.command()
 async def ping(ctx):
     await ctx.send("Pong !")
-
-@bot.command()
-async def status(ctx):
-    await ctx.send(f"Connecté en tant que **{bot.user}** ✅")
 
 # Démarrage du serveur Flask pour Render
 keep_alive()
