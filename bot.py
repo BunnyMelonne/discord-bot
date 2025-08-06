@@ -13,7 +13,10 @@ intents.message_content = True
 
 # Création du bot
 bot = commands.Bot(command_prefix="!", intents=intents)
-bot.load_extension("commands.status")
+
+@bot.event
+async def setup_hook():
+    await bot.load_extension("commands.status")
 
 @bot.event
 async def on_ready():
