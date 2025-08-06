@@ -22,6 +22,10 @@ async def on_ready():
 async def ping(ctx):
     await ctx.send("Pong !")
 
+@bot.command()
+async def status(ctx):
+    await ctx.send(f"Connecté en tant que **{bot.user}** ✅")
+
 # Démarrage du serveur Flask pour Render
 keep_alive()
 
