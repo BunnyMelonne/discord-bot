@@ -2,6 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+GUILD_ID = 1014974215952281672
+
 class TimeoutView(discord.ui.View):
     def __init__(self, user):
         super().__init__(timeout=30)  # timeout en secondes
@@ -46,14 +48,12 @@ class Hello(commands.Cog):
     @app_commands.command(name="multibutton", description="Teste plusieurs boutons avec timeout")
     async def multibutton(self, interaction: discord.Interaction):
         view = MultiButtonView(interaction.user)
-        # Enregistre le message dans la vue pour pouvoir l'éditer plus tard
-        message = await interaction.response.send_message("Choisis une option :", view=view)
-        # Comme interaction.response.send_message() ne renvoie pas directement le message,
-        # il faut utiliser fetch_message après (ou response deferred + followup)
-        # Ici on doit récupérer le message envoyé :
+        await interaction.response.send_message("Choisis une option :", view=view)
         sent_message = await interaction.original_response()
         view.message = sent_message
 
 async def setup(bot):
     await bot.add_cog(Hello(bot))
-    await bot.tree.sync()
+    print(f"Sync des commandes sur le serveur {GUILD_ID}...")
+    await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
+    print("Sync locale terminée.")
