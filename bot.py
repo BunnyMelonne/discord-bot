@@ -31,9 +31,6 @@ async def setup_hook():
         # Charger les extensions
         await bot.load_extension("commands.status")
         await bot.load_extension("commands.hello")
-        await bot.load_extension("commands.admin")  # ← pour /sync_local
-
-        # Synchronisation globale (peut prendre jusqu'à 1h)
         await bot.tree.sync()
         logger.info("✅ Commandes slash globales synchronisées.")
         
