@@ -23,9 +23,7 @@ logger = logging.getLogger(__name__)
 async def setup_hook():
     try:
         await bot.load_extension("commands.status")
-        logger.info("Extension commands.status chargée")
         await bot.load_extension("commands.hello")
-        logger.info("Extension commands.hello chargée")
 
         guild = discord.Object(id=GUILD_ID)
         await bot.tree.sync(guild=guild)
