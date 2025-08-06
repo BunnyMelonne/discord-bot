@@ -28,15 +28,15 @@ async def ping(interaction: discord.Interaction):
 @bot.event
 async def setup_hook():
     try:
-        # Charger tes autres extensions slash
+        # Charger les extensions
         await bot.load_extension("commands.status")
         await bot.load_extension("commands.hello")
+        await bot.load_extension("commands.admin")  # ← pour /sync_local
 
-        # Synchronisation des commandes slash sur ton serveur de test
-        guild = discord.Object(id=GUILD_ID)
-        await bot.tree.sync(guild=guild)
-
-        logger.info(f"✅ Commandes slash synchronisées sur le serveur {GUILD_ID}.")
+        # Synchronisation globale (peut prendre jusqu'à 1h)
+        await bot.tree.sync()
+        logger.info("✅ Commandes slash globales synchronisées.")
+        
     except Exception as e:
         logger.error(f"❌ Erreur lors du chargement des extensions ou sync : {e}")
 
