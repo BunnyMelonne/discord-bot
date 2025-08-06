@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import time
 import platform
 
@@ -14,8 +15,8 @@ class Status(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def status(self, ctx):
+    @app_commands.command(name="status", description="Affiche les informations sur le bot")
+    async def status(self, interaction: discord.Interaction):
         uptime_seconds = int(time.time() - start_time)
         hours, remainder = divmod(uptime_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -23,7 +24,7 @@ class Status(commands.Cog):
         latency = round(self.bot.latency * 1000)
         guild_count = len(self.bot.guilds)
         user_count = sum(1 for g in self.bot.guilds for m in g.members if not m.bot)
-        command_count = len(self.bot.commands)
+        command_count = len(self.bot.tree.get_commands())
         python_version = platform.python_version()
         discord_version = discord.__version__
         os_name = platform.system()
@@ -47,7 +48,7 @@ class Status(commands.Cog):
         embed.add_field(name="🔗 Lien d'invitation", value=f"[Clique ici]({INVITE_URL})", inline=False)
         embed.set_footer(text="BotRonron 🐱")
 
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Status(bot))
