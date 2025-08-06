@@ -15,6 +15,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def setup_hook():
     await bot.load_extension("commands.status")
+    await bot.load_extension("commands.hello")
 
 @bot.event
 async def on_ready():
