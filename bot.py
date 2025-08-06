@@ -21,14 +21,17 @@ logger = logging.getLogger(__name__)
 
 @bot.event
 async def setup_hook():
-    # Chargement des extensions
-    await bot.load_extension("commands.status")
-    await bot.load_extension("commands.hello")
+    try:
+        await bot.load_extension("commands.status")
+        logger.info("Extension commands.status chargée")
+        await bot.load_extension("commands.hello")
+        logger.info("Extension commands.hello chargée")
 
-    # Sync locale des commandes slash sur le serveur spécifié
-    guild = discord.Object(id=GUILD_ID)
-    await bot.tree.sync(guild=guild)
-    logger.info(f"Commandes slash synchronisées sur le serveur {GUILD_ID}.")
+        guild = discord.Object(id=GUILD_ID)
+        await bot.tree.sync(guild=guild)
+        logger.info(f"Commandes slash synchronisées sur le serveur {GUILD_ID}.")
+    except Exception as e:
+        logger.error(f"Erreur lors du chargement des extensions ou sync : {e}")
 
 @bot.event
 async def on_ready():
