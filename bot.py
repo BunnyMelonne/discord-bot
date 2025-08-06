@@ -3,6 +3,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from keep_alive import keep_alive
 import os
+import logging
 
 load_dotenv()
 
@@ -14,6 +15,10 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# Configure le logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("discord")
+
 @bot.event
 async def setup_hook():
     # Chargement des extensions
@@ -23,11 +28,11 @@ async def setup_hook():
     # Sync locale des commandes slash sur le serveur spécifié
     guild = discord.Object(id=GUILD_ID)
     await bot.tree.sync(guild=guild)
-    print(f"Commandes slash synchronisées sur le serveur {GUILD_ID}.")
+    logger.info(f"Commandes slash synchronisées sur le serveur {GUILD_ID}.")
 
 @bot.event
 async def on_ready():
-    print(f"Bot connecté en tant que {bot.user}")
+    logger.info(f"Bot connecté en tant que {bot.user}")
 
 @bot.command()
 async def ping(ctx):
@@ -39,4 +44,4 @@ token = os.getenv("TOKEN")
 if token:
     bot.run(token)
 else:
-    print("❌ ERREUR : TOKEN non trouvé. Vérifie ton .env ou tes variables Render.")
+    logger.error("❌ ERREUR : TOKEN non trouvé. Vérifie ton .env ou tes variables Render.")
