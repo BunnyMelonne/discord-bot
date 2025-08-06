@@ -29,6 +29,7 @@ async def setup_hook():
         # Charger les extensions
         await bot.load_extension("commands.status")
         await bot.load_extension("commands.hello")
+        await bot.load_extension("commands.avatar")
         await bot.tree.sync()
         logger.info("✅ Commandes slash globales synchronisées.")
         
