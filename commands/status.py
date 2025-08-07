@@ -17,6 +17,8 @@ class Status(commands.Cog):
 
     @app_commands.command(name="status", description="Affiche les informations sur le bot")
     async def status(self, interaction: discord.Interaction):
+        await interaction.response.defer()  # Accusé de réception rapide
+
         uptime_seconds = int(time.time() - start_time)
         hours, remainder = divmod(uptime_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -48,7 +50,7 @@ class Status(commands.Cog):
         embed.add_field(name="🔗 Lien d'invitation", value=f"[Clique ici]({INVITE_URL})", inline=False)
         embed.set_footer(text="BotRonron 🐱")
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Status(bot))
