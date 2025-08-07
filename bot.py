@@ -30,6 +30,7 @@ async def setup_hook():
         await bot.load_extension("commands.status")
         await bot.load_extension("commands.hello")
         await bot.load_extension("commands.avatar")
+        await bot.load_extension("commands.test_db")
         await bot.tree.sync()
         logger.info("✅ Commandes slash globales synchronisées.")
         
