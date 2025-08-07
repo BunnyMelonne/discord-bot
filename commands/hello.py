@@ -1,14 +1,15 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+from typing import Optional
+from discord import InteractionMessage
 
 class TimeoutView(discord.ui.View):
     def __init__(self, timeout=180):
         super().__init__(timeout=timeout)
-        self.message = None
+        self.message: Optional[InteractionMessage] = None
 
     async def on_timeout(self):
-        # Désactive les boutons quand la vue expire
         if self.message:
             try:
                 await self.message.edit(view=None)
@@ -22,7 +23,6 @@ class MultiButtonView(TimeoutView):
 
     @discord.ui.button(label="Dire bonjour 👋", style=discord.ButtonStyle.primary)
     async def say_hello(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Répond en éphémère pour ne pas spammer le chat
         await interaction.response.send_message(
             f"Salut {self.user.mention} ! 👋", ephemeral=True
         )
@@ -35,8 +35,8 @@ class MultiButtonView(TimeoutView):
 
     @discord.ui.button(label="Supprimer le message ❌", style=discord.ButtonStyle.danger)
     async def delete_message(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Supprime le message contenant les boutons
-        await interaction.message.delete()
+        if interaction.message is not None:
+            await interaction.message.delete()
 
 class Hello(commands.Cog):
     def __init__(self, bot):
@@ -47,9 +47,9 @@ class Hello(commands.Cog):
         view = MultiButtonView(interaction.user)
         await interaction.response.send_message("Choisis une option :", view=view)
 
-        # Récupère le message envoyé pour pouvoir modifier la vue plus tard (timeout)
-        sent_message = await interaction.original_response()
+        sent_message = await interaction.original_response()  # type: ignore
         view.message = sent_message
 
 async def setup(bot):
     await bot.add_cog(Hello(bot))
+    
