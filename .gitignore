@@ -1,5 +1,26 @@
-config*
-.env
+# Environnement virtuel
 .venv/
-__pycache__/
+venv/
 
+# Fichiers de configuration sensibles
+.env
+config*
+
+# Dossier de cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Fichiers de logs
+*.log
+
+# Fichiers générés par l’OS ou l’éditeur
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Dépendances compilées (si jamais tu en génères localement)
+*.egg-info/
+build/
+dist/
