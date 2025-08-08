@@ -50,6 +50,14 @@ async def on_ready():
     logger.info(f"🤖 Bot connecté en tant que {bot.user}")
     await test_connection()
 
+@bot.event
+async def on_disconnect():
+    logger.warning("⚠️ Bot déconnecté de Discord.")
+
+@bot.event
+async def on_resumed():
+    logger.info("🔄 Session Discord reprise avec succès.")
+
 # Lance le serveur Flask pour Render
 keep_alive()
 
