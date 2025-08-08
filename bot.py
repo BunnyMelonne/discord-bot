@@ -17,6 +17,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logging.getLogger("discord.gateway").setLevel(logging.DEBUG)
 
 GUILD_ID = 1014974215952281672
 
