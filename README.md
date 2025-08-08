@@ -1,36 +1,38 @@
 # Bot Discord "BotRonron"
 
-Un bot Discord simple hébergé sur Render, maintenu actif avec UptimeRobot.
+Un bot Discord simple et léger, hébergé sur Render, avec un serveur Flask minimal pour rester actif via UptimeRobot.
 
 ---
 
-## Fonctionnalités
+## Fonctionnalités principales
 
-- Commande `!ping` répond avec `Pong !`
-- Serveur Flask minimal pour keep-alive (ping par UptimeRobot)
-- Chargement sécurisé du token via `.env` localement et variables d’environnement Render
+- Commande `/ping` qui répond `Pong !`
+- Chargement sécurisé du token via `.env` localement et variables d’environnement sur Render
+- Keep-alive grâce à un serveur Flask minimal et pings réguliers d’UptimeRobot
+- Commandes modulaires organisées en extensions (cogs)
 
 ---
 
-## Installation et lancement local
+## Installation et usage local
 
-1. Clone le repo :
+1. Clone le dépôt :
     ```bash
-    git clone <URL-du-repo>
-    cd <nom-du-repo>
+    git clone https://github.com/BunnyMelonne/discord-bot.git
+    cd discord-bot
     ```
 
-2. Crée un fichier `.env` à la racine avec :
+2. Crée un fichier `.env` à la racine avec la variable suivante :
     ```
     TOKEN=ton_token_discord
+    ENV=dev
     ```
 
-3. Installe les dépendances :
+3. Installe les dépendances Python :
     ```bash
     pip install -r requirements.txt
     ```
 
-4. Lance le bot localement :
+4. Lance le bot :
     ```bash
     python bot.py
     ```
@@ -41,11 +43,11 @@ Un bot Discord simple hébergé sur Render, maintenu actif avec UptimeRobot.
 
 1. Pousse ton code sur GitHub.
 
-2. Sur [Render](https://render.com), crée un nouveau service Web lié à ton repo.
+2. Crée un service Web sur [Render](https://render.com) lié à ton dépôt.
 
 3. Configure la variable d’environnement `TOKEN` dans les paramètres du service.
 
-4. Configure la commande de démarrage :
+4. Configure la commande de démarrage à :
     ```
     python bot.py
     ```
@@ -58,30 +60,39 @@ Un bot Discord simple hébergé sur Render, maintenu actif avec UptimeRobot.
 
 1. Crée un compte gratuit sur [UptimeRobot](https://uptimerobot.com).
 
-2. Crée un nouveau monitor HTTP(s).
+2. Ajoute un nouveau monitor HTTP(s).
 
-3. Configure l’URL avec celle de Render, par exemple :
+3. Utilise l’URL publique de ton service Render, par exemple :
     ```
-    https://<ton-service>.onrender.com/
+    https://discord-bot-rn90.onrender.com/
     ```
 
-4. Configure un ping toutes les 5 minutes.
+4. Configure un ping toutes les 5 minutes pour maintenir le bot actif.
 
 ---
 
 ## Structure du projet
 
-~~~
-├── bot.py          # Code principal du bot
-├── keep_alive.py   # Serveur Flask pour keep-alive
-├── requirements.txt
-├── .gitignore      # Ignore .env et config
-└── README.md
-~~~
+```plaintext
+discord-bot/
+├── bot.py             # Script principal du bot Discord
+├── keep_alive.py      # Serveur Flask pour keep-alive
+├── commands/          # Extensions (cogs) des commandes Discord
+│   ├── menu.py
+│   ├── status.py
+│   ├── test_db.py
+│   ├── avatar.py
+│   └── hello.py
+├── db.py              # Gestion base MongoDB (avec motor)
+├── requirements.txt   # Dépendances Python
+├── .env               # Variables d'environnement (non commit)
+└── README.md          # Ce fichier
+```
 
-## Remarques
+## Remarques importantes
 
-- Ne jamais committer `.env` ou fichiers sensibles dans GitHub.
-- Les variables sensibles doivent être gérées via les variables d’environnement Render.
+- Ne jamais committer le fichier `.env` ni d’autres fichiers contenant des données sensibles.
+- Les tokens et clés doivent être gérés via les variables d’environnement sur Render ou en local.
+- Pour le développement local, utiliser `ENV=dev` dans `.env` pour synchroniser les commandes uniquement sur ton serveur de test Discord.
 
 ---
