@@ -1,5 +1,5 @@
 discord.py
 python-dotenv
 Flask
-pymongo
+motor
 certifi

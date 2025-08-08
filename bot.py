@@ -1,10 +1,11 @@
+import os
+from discord import Object
 import discord
 from discord.ext import commands
-from discord import app_commands
 from dotenv import load_dotenv
 from keep_alive import keep_alive
-import os
 import logging
+from db import test_connection
 
 load_dotenv()
 
@@ -14,11 +15,11 @@ intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Configure le logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Slash command ping
+GUILD_ID = 1014974215952281672
+
 @bot.tree.command(name="ping", description="Renvoie Pong !")
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("Pong !")
@@ -31,15 +32,23 @@ async def setup_hook():
         await bot.load_extension("commands.hello")
         await bot.load_extension("commands.avatar")
         await bot.load_extension("commands.test_db")
-        await bot.tree.sync()
-        logger.info("✅ Commandes slash globales synchronisées.")
-        
+        await bot.load_extension("commands.menu")
+
+        if os.getenv("ENV") == "dev":
+            guild = Object(id=GUILD_ID)
+            await bot.tree.sync(guild=guild)
+            logger.info(f"✅ Commandes synchronisées localement sur le serveur {GUILD_ID}")
+        else:
+            await bot.tree.sync()
+            logger.info("✅ Commandes synchronisées globalement.")
+
     except Exception as e:
         logger.error(f"❌ Erreur lors du chargement des extensions ou sync : {e}")
 
 @bot.event
 async def on_ready():
     logger.info(f"🤖 Bot connecté en tant que {bot.user}")
+    await test_connection()
 
 # Lance le serveur Flask pour Render
 keep_alive()

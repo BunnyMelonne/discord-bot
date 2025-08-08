@@ -9,7 +9,11 @@ class TestDB(commands.Cog):
     @commands.command(name="testdb")
     async def test_db(self, ctx):
         try:
-            result = users_collection.insert_one({"test": "ok", "timestamp": datetime.utcnow()})
+            # await sur la coroutine insert_one
+            result = await users_collection.insert_one({
+                "test": "ok",
+                "timestamp": datetime.utcnow()
+            })
             await ctx.send(f"✅ DB ok, id doc inséré : {result.inserted_id}")
         except Exception as e:
             await ctx.send(f"❌ Erreur DB : {e}")
