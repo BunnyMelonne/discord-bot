@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+from typing import Optional
 
 class Avatar(commands.Cog):
     def __init__(self, bot):
@@ -8,7 +9,7 @@ class Avatar(commands.Cog):
 
     @app_commands.command(name="avatar", description="Affiche l'avatar d'un utilisateur")
     @app_commands.describe(user="L'utilisateur dont tu veux voir l'avatar")
-    async def avatar(self, interaction: discord.Interaction, user: discord.User = None):
+    async def avatar(self, interaction: discord.Interaction, user: Optional[discord.abc.User] = None):
         user = user or interaction.user
         embed = discord.Embed(
             title=f"Avatar de {user.display_name}",
