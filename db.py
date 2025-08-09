@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 mongo_uri = os.getenv("MONGO_URI")
+if not mongo_uri:
+    logger.error("❌ MONGO_URI non défini dans les variables d'environnement.")
 
 client = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri, tls=True, tlsCAFile=certifi.where())
 db = client["my_discord_bot"]
