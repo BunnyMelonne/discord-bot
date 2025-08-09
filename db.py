@@ -17,7 +17,7 @@ client = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri, tls=True, tlsCAFile=c
 db = client["my_discord_bot"]
 users_collection = db["users"]
 
-async def test_connection():
+async def check_mongodb_connection():
     try:
         await client.admin.command("ping")
         logger.info("✅ Connexion MongoDB réussie !")
