@@ -5,7 +5,7 @@ from discord import Object
 from discord.ext import commands
 from dotenv import load_dotenv
 from keep_alive import keep_alive
-from db import test_connection
+from db import check_mongodb_connection
 from extensions import EXTENSIONS
 
 load_dotenv()
@@ -19,29 +19,19 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-GUILD_ID = 1014974215952281672
-
 @bot.event
 async def setup_hook():
     try:
         for ext in EXTENSIONS:
             await bot.load_extension(ext)
-
-        if os.getenv("ENV") == "dev":
-            guild = Object(id=GUILD_ID)
-            await bot.tree.sync(guild=guild)
-            logger.info(f"✅ Commandes synchronisées localement sur le serveur {GUILD_ID}")
-        else:
-            await bot.tree.sync()
-            logger.info("✅ Commandes synchronisées globalement.")
-
+        logger.info("✅ Extensions chargées avec succès.")
     except Exception:
-        logger.exception("❌ Erreur lors du chargement des extensions ou sync")
+        logger.exception("❌ Erreur lors du chargement des extensions")
 
 @bot.event
 async def on_ready():
     logger.info(f"🤖 Bot connecté en tant que {bot.user}")
-    await test_connection()
+    await check_mongodb_connection()
 
 @bot.event
 async def on_disconnect():
