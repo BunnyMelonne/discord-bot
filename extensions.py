@@ -4,5 +4,6 @@ EXTENSIONS = [
     "commands.hello",
     "commands.avatar",
     "commands.menu",
-    "commands.sync_cmds"
+    "commands.sync_cmds",
+    "commands.job"
 ]
