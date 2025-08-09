@@ -5,5 +5,4 @@ EXTENSIONS = [
     "commands.avatar",
     "commands.menu",
     "commands.sync_cmds",
-    "commands.job"
 ]
