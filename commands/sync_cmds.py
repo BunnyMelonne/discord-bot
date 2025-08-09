@@ -3,6 +3,9 @@ import discord
 from discord import Object
 from discord.ext import commands
 from discord import app_commands
+import logging
+
+logger = logging.getLogger(__name__)
 
 GUILD_ID = 1014974215952281672
 
@@ -14,13 +17,17 @@ class SyncCmds(commands.Cog):
     async def resync(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         try:
-            if os.getenv("ENV") == "dev":
+            env = os.getenv("ENV")
+            if env == "dev":
                 guild = Object(id=GUILD_ID)
-                await self.bot.tree.sync(guild=guild)
+                self.bot.tree.copy_global_to(guild=guild)
+                synced = await self.bot.tree.sync(guild=guild)
                 message = f"✅ Commandes synchronisées localement sur le serveur {GUILD_ID}."
             else:
-                await self.bot.tree.sync()
+                synced = await self.bot.tree.sync()
                 message = "✅ Commandes synchronisées globalement."
+
+            logger.info(f"Commandes synchronisées : {[cmd.name for cmd in synced]}")
 
             await interaction.followup.send(message, ephemeral=True)
 
