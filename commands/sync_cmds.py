@@ -1,38 +1,33 @@
 import os
 import discord
-from discord import Object
 from discord.ext import commands
 from discord import app_commands
 import logging
 
 logger = logging.getLogger(__name__)
 
-GUILD_ID = 1014974215952281672
+OWNER_ID = 998191350807797830
 
 class SyncCmds(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="sync_commands", description="Resynchronise les commandes slash du bot")
+    @app_commands.command(name="sync_commands", description="Synchronise toutes les commandes slash (globalement)")
     async def resync(self, interaction: discord.Interaction):
+        if interaction.user.id != OWNER_ID:
+            await interaction.response.send_message("❌ Tu n'as pas la permission d'utiliser cette commande.", ephemeral=True)
+            return
+
         await interaction.response.defer(ephemeral=True)
+
         try:
-            env = os.getenv("ENV")
-            if env == "dev":
-                guild = Object(id=GUILD_ID)
-                self.bot.tree.copy_global_to(guild=guild)
-                synced = await self.bot.tree.sync(guild=guild)
-                message = f"✅ Commandes synchronisées localement sur le serveur {GUILD_ID}."
-            else:
-                synced = await self.bot.tree.sync()
-                message = "✅ Commandes synchronisées globalement."
-
-            logger.info(f"Commandes synchronisées : {[cmd.name for cmd in synced]}")
-
-            await interaction.followup.send(message, ephemeral=True)
+            synced = await self.bot.tree.sync()
+            logger.info(f"[SYNC] Commandes : {[cmd.name for cmd in synced]} | Total : {len(synced)}")
+            await interaction.followup.send(f"✅ {len(synced)} commandes synchronisées globalement.", ephemeral=True)
 
         except Exception as e:
-            await interaction.followup.send(f"❌ Erreur lors de la synchronisation : {e}", ephemeral=True)
+            logger.error(f"Erreur lors de la synchronisation : {e}", exc_info=True)
+            await interaction.followup.send(f"❌ Erreur : {e}", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(SyncCmds(bot))
