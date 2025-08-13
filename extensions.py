@@ -6,5 +6,5 @@ EXTENSIONS = [
     "commands.menu",
     "commands.sync_cmds",
     "commands.modal",
-
+    "commands.puissance4",
 ]
