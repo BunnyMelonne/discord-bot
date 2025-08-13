@@ -9,7 +9,7 @@ import datetime
 START_TIME  = time.time()
 BOT_VERSION = "1.0.0"
 CREATOR     = "<@998191350807797830>"
-INVITE_URL  = "https://discord.com/oauth2/authorize?client_id=1402212878710476881&permissions=8&scope=bot"
+INVITE_URL  = "https://github.com/BunnyMelonne/discord-bot"
 
 class Status(commands.Cog):
     def __init__(self, bot):
