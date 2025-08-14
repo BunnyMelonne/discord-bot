@@ -28,26 +28,23 @@ def check_win(board, piece):
         for c in range(COLS - 3):
             if all(board[r][c + i] == piece for i in range(4)):
                 return True
-            
     for r in range(ROWS - 3):
         for c in range(COLS):
             if all(board[r + i][c] == piece for i in range(4)):
                 return True
-            
     for r in range(ROWS - 3):
         for c in range(COLS - 3):
             if all(board[r + i][c + i] == piece for i in range(4)):
                 return True
-            
     for r in range(ROWS - 3):
         for c in range(3, COLS):
             if all(board[r + i][c - i] == piece for i in range(4)):
                 return True
-            
     return False
 
 def board_full(board):
     return all(cell != "⚪" for row in board for cell in row)
+
 
 class Puissance4View(discord.ui.View):
     def __init__(self, p1: discord.Member, p2: discord.Member):
@@ -65,50 +62,44 @@ class Puissance4View(discord.ui.View):
         self.update_buttons()
 
     def update_buttons(self):
+        current_style = (
+            discord.ButtonStyle.danger if self.turn == self.players[0] 
+            else discord.ButtonStyle.primary
+        )
+
         for button in self.children:
             if isinstance(button, Puissance4Button):
                 button.disabled = self.board[0][button.col] != "⚪"
+                button.style = current_style
 
-                if self.turn == self.players[0]:
-                    button.style = discord.ButtonStyle.danger 
-                else:
-                    button.style = discord.ButtonStyle.primary
 
     def disable_all_buttons(self):
         for child in self.children:
-            child.disabled = True # type: ignore
+            child.disabled = True  # type: ignore
 
     def get_embed(self, winner: Optional[discord.Member] = None, draw: bool = False):
-        description = display_board(self.board) + "\n\n"
+        description = display_board(self.board) + "\n\n" + (
+            f"🎉 {winner.mention} a gagné !" if winner else
+            "🤝 Match nul !" if draw else
+            f"Tour de: {self.pieces[self.turn.id]} {self.turn.mention}"
+        )
 
-        if winner:
-            description += f"🎉 {winner.mention} a gagné !"
-        elif draw:
-            description += "🤝 Match nul !"
-        else:
-            piece_emoji = self.pieces[self.turn.id]
-            description += f"Tour de: {piece_emoji} {self.turn.mention}"
+        color = (
+            discord.Color.green() if winner else
+            discord.Color.greyple() if draw else
+            self.colors[self.turn.id]
+        )
 
-        return discord.Embed(
-            title="Puissance 4",
-            description=description,
-            color=self.colors[winner.id if winner else self.turn.id]
-        ).set_thumbnail(url="https://i.imgur.com/NjrISNE.png")
-
-    async def handle_invalid_move(self, interaction: discord.Interaction):
-        await interaction.followup.send("❌ Colonne pleine ou invalide !", ephemeral=True)
+        return (
+            discord.Embed(title="Puissance 4", description=description, color=color)
+            .set_thumbnail(url="https://i.imgur.com/NjrISNE.png")
+        )
 
     async def end_game(self, winner: Optional[discord.Member] = None):
         self.disable_all_buttons()
-
-        if winner:
-            embed = self.get_embed(winner)
-        else:
-            embed = self.get_embed(draw=board_full(self.board))
-
+        draw = not winner and board_full(self.board)
         if self.message:
-            await self.message.edit(embed=embed, view=self)
-
+            await self.message.edit(embed=self.get_embed(winner=winner, draw=draw), view=self)
         self.stop()
 
     async def switch_turn(self):
@@ -120,10 +111,7 @@ class Puissance4View(discord.ui.View):
     async def play_turn(self, col: int, interaction: discord.Interaction):
         piece = self.pieces[self.turn.id]
         if not drop_piece(self.board, col, piece):
-            await self.handle_invalid_move(interaction)
             return
-
-        self.update_buttons()
 
         if check_win(self.board, piece):
             await self.end_game(self.turn)
@@ -132,15 +120,15 @@ class Puissance4View(discord.ui.View):
         if board_full(self.board):
             await self.end_game()
             return
-        
+
         await self.switch_turn()
 
     async def on_timeout(self):
+        self.disable_all_buttons()
         if self.message:
-            await self.end_game()
             await self.message.channel.send("⌛ Temps écoulé, la partie est terminée !")
-        else:
-            self.stop()
+        self.stop()
+
 
 class Puissance4Button(discord.ui.Button):
     def __init__(self, col: int, game_view: Puissance4View):
@@ -154,6 +142,7 @@ class Puissance4Button(discord.ui.Button):
             return
         await interaction.response.defer()
         await self.p4view.play_turn(self.col, interaction)
+
 
 class Puissance4(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -170,6 +159,7 @@ class Puissance4(commands.Cog):
         view = Puissance4View(joueur1, joueur2)
         await interaction.response.send_message(embed=view.get_embed(), view=view)
         view.message = await interaction.original_response()
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Puissance4(bot))
