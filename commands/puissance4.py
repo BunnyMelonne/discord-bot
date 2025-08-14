@@ -156,10 +156,12 @@ class Puissance4View(discord.ui.View):
         await self.switch_turn()
 
     async def on_timeout(self):
-        """Gestion du timeout de la partie."""
         self.disable_all_buttons()
         if self.message:
-            await self.message.channel.send("⌛ Temps écoulé, la partie est terminée !")
+            await self.message.edit(
+                embed=self.get_embed().set_footer(text="⌛ Temps écoulé !"),
+                view=self
+            )
         self.stop()
 
 # ==========================
