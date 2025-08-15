@@ -187,11 +187,13 @@ class Puissance4View(discord.ui.View):
     async def on_timeout(self):
         self.disable_all_buttons()
         if self.message:
-            await self.message.edit(
-                embed=self.get_embed().set_footer(text="⌛ Temps écoulé !"),
-                view=self
+            await self.message.edit(view=self)
+            await self.message.channel.send(
+                "⌛ Temps écoulé ! La partie est terminée.",
+                reference=self.message
             )
         self.stop()
+
 
 # =========================================
 # Classe des boutons pour les colonnes
