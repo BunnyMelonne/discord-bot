@@ -199,7 +199,7 @@ class Puissance4View(discord.ui.View):
 
 class Puissance4Button(discord.ui.Button):
     def __init__(self, col: int, game_view: Puissance4View, row: int = 0):
-        super().__init__(style=discord.ButtonStyle.secondary, emoji=EMOJIS[col], row=row)
+        super().__init__(emoji=EMOJIS[col], row=row)
         self.col = col
         self.p4view = game_view
 
