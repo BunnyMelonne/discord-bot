@@ -6,6 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from typing import Optional, cast
+import random
 
 # =========================================
 # Constantes du jeu
@@ -77,15 +78,15 @@ def board_full(board):
 # =========================================
 
 class Puissance4View(discord.ui.View):
-    def __init__(self, p1: discord.Member, p2: discord.Member):
+    def __init__(self, p1: discord.Member, p2: discord.Member, scores: Optional[dict] = None):
         super().__init__(timeout=300)
         self.board = create_board()
         self.players = [p1, p2]
         self.pieces = {p1.id: PIECES["p1"], p2.id: PIECES["p2"]}
         self.colors = {p1.id: COLORS["p1"], p2.id: COLORS["p2"]}
-        self.turn = p1
+        self.turn = random.choice(self.players)
         self.message: Optional[discord.Message] = None
-        self.scores = {p1.id: 0, p2.id: 0}
+        self.scores = scores or {p1.id: 0, p2.id: 0}
 
         self.init_buttons()
 
@@ -192,11 +193,6 @@ class Puissance4View(discord.ui.View):
             )
         self.stop()
 
-    def reset_game(self):
-        self.board = create_board()
-        self.turn = self.players[0]
-        self.init_buttons()
-
 # =========================================
 # Classe des boutons pour les colonnes
 # =========================================
@@ -225,7 +221,6 @@ class RejouerButton(discord.ui.Button):
         self.game_view = game_view
 
     async def callback(self, interaction: discord.Interaction):
-        """Gestion du clic sur le bouton Rejouer."""
         if interaction.user not in self.game_view.players:
             await interaction.response.send_message(
                 "❌ Seuls les joueurs de la partie peuvent relancer le jeu.", 
@@ -233,11 +228,16 @@ class RejouerButton(discord.ui.Button):
             )
             return
 
-        self.game_view.reset_game()
-        
+        new_view = Puissance4View(
+            self.game_view.players[0],
+            self.game_view.players[1],
+            scores=self.game_view.scores
+        )
+        new_view.message = self.game_view.message
+
         await interaction.response.edit_message(
-            embed=self.game_view.get_embed(),
-            view=self.game_view
+            embed=new_view.get_embed(),
+            view=new_view
         )
 
 # =========================================
