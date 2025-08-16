@@ -100,17 +100,19 @@ class Puissance4View(discord.ui.View):
             self.add_item(Puissance4Button(i, self, row=row))
         self.update_buttons()
 
+    def get_style(self):
+        """Retourne le style du bouton selon le joueur actuel."""
+        if self.turn == self.players[0]:
+            return discord.ButtonStyle.danger
+        return discord.ButtonStyle.primary
+
     def update_buttons(self):
         """Met à jour le style et l'état des boutons selon le tour et le plateau."""
-        current_style = (
-            discord.ButtonStyle.danger if self.turn == self.players[0] 
-            else discord.ButtonStyle.primary
-        )
-
+        style = self.get_style()
         for button in self.children:
             if isinstance(button, Puissance4Button):
                 button.disabled = self.board[0][button.col] != EMPTY
-                button.style = current_style
+                button.style = style
 
     def disable_all_buttons(self):
         """Désactive tous les boutons."""
@@ -156,29 +158,39 @@ class Puissance4View(discord.ui.View):
         )
         color = self.get_color(winner, draw)
         return (
-            discord.Embed(title="✦━─ Puissance 4 ─━✦", description=description, color=color)
+            discord.Embed(
+                title="✦━─ Puissance 4 ─━✦", 
+                description=description, 
+                color=color
+            )
             .set_thumbnail(url="https://i.imgur.com/NjrISNE.png")
         )
 
-    async def end_game(self, winner: Optional[discord.Member] = None):
+    async def end_game(self, winner: Optional[discord.Member] = None, draw: bool = False):
         """Termine la partie et met à jour l'embed."""
-        draw = not winner and board_full(self.board)
-
         if winner:
             self.scores[winner.id] += 1
 
         self.endgame = True
+
         self.clear_items()
         self.add_item(RejouerButton(self))
+
         if self.message:
-            await self.message.edit(embed=self.get_embed(winner=winner, draw=draw), view=self)
+            await self.message.edit(
+                embed=self.get_embed(winner=winner, draw=draw), 
+                view=self
+            )
 
     async def switch_turn(self):
         """Change le tour au joueur suivant."""
         self.turn = self.players[1 - self.players.index(self.turn)]
         self.update_buttons()
         if self.message:
-            await self.message.edit(embed=self.get_embed(), view=self)
+            await self.message.edit(
+                embed=self.get_embed(), 
+                view=self
+            )
 
     async def play_turn(self, col: int):
         """Joue un tour pour le joueur actuel."""
@@ -187,25 +199,23 @@ class Puissance4View(discord.ui.View):
             return
 
         if check_win(self.board, piece):
-            await self.end_game(self.turn)
-            return
-        
-        if board_full(self.board):
-            await self.end_game()
-            return
-
-        await self.switch_turn()
+            await self.end_game(winner=self.turn)
+        elif board_full(self.board):
+            await self.end_game(draw=True)
+        else:
+            await self.switch_turn()
 
     async def on_timeout(self):
         """Action à effectuer lorsque le temps est écoulé."""
         self.disable_all_buttons()
 
-        if not self.endgame and self.message:
+        if self.message:
             await self.message.edit(view=self)
-            await self.message.channel.send(
-                "⌛ Temps écoulé ! La partie est terminée.",
-                reference=self.message
-            )
+            if not self.endgame:
+                await self.message.channel.send(
+                    "⌛ Temps écoulé ! La partie est terminée.",
+                    reference=self.message
+                )
 
         self.stop()
 
@@ -222,9 +232,21 @@ class Puissance4Button(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         """Gestion du clic sur le bouton."""
-        if interaction.user != self.p4view.turn:
-            await interaction.response.send_message("⏳ Ce n'est pas votre tour.", ephemeral=True)
+
+        if self.p4view.endgame:
+            await interaction.response.send_message(
+                "🚫 La partie est terminée.", 
+                ephemeral=True
+            )
             return
+
+        if interaction.user != self.p4view.turn:
+            await interaction.response.send_message(
+                "⏳ Ce n'est pas votre tour.", 
+                ephemeral=True
+            )
+            return
+
         await interaction.response.defer()
         await self.p4view.play_turn(self.col)
 
@@ -274,10 +296,17 @@ class Puissance4(commands.Cog):
         joueur1 = cast(discord.Member, interaction.user)
         joueur2 = adversaire
         if joueur1 == joueur2 or joueur1.bot or joueur2.bot:
-            await interaction.response.send_message("❌ Impossible de jouer.", ephemeral=True)
+            await interaction.response.send_message(
+                "❌ Impossible de jouer.", 
+                ephemeral=True
+            )
             return
+        
         view = Puissance4View(joueur1, joueur2)
-        await interaction.response.send_message(embed=view.get_embed(), view=view)
+        await interaction.response.send_message(
+            embed=view.get_embed(), 
+            view=view
+        )
         view.message = await interaction.original_response()
 
 # =========================================
