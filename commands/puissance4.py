@@ -28,7 +28,9 @@ def create_board():
 
 def display_board(board):
     """Affiche la grille de jeu sous forme de chaîne de caractères."""
-    return " ".join(EMOJIS) + "\n" + "\n".join(" ".join(row) for row in board)
+    lines = [" ".join(EMOJIS)]
+    lines += [" ".join(row) for row in board]
+    return "\n".join(lines)
 
 def drop_piece(board, col, piece):
     """Place une pièce dans la colonne spécifiée."""
@@ -67,7 +69,7 @@ def check_win(board, piece):
 
 def board_full(board):
     """Vérifie si la grille est pleine."""
-    return all(cell != EMPTY for row in board for cell in row)
+    return not any(cell == EMPTY for row in board for cell in row)
 
 # =========================================
 # Classe de la vue du jeu (View)
@@ -93,8 +95,7 @@ class Puissance4View(discord.ui.View):
         """Initialise les boutons pour chaque colonne."""
         self.clear_items()
         for i in range(COLS):
-            row = 0 if i < 4 else 1
-            self.add_item(Puissance4Button(i, self, row=row))
+            self.add_item(Puissance4Button(i, self, row = i // 4))
         self.update_buttons()
 
     def get_style(self):
@@ -163,14 +164,11 @@ class Puissance4View(discord.ui.View):
             f"{self.get_status_message(winner, draw)}\n\n"
             f"{self.get_score_display()}"
         )
-        return (
-            discord.Embed(
-                title="✦━─ Puissance 4 ─━✦", 
-                description=description, 
-                color=self.get_color(winner, draw)
-            )
-            .set_thumbnail(url="https://i.imgur.com/NjrISNE.png")
-        )
+        return discord.Embed(
+            title="✦━─ Puissance 4 ─━✦", 
+            description=description, 
+            color=self.get_color(winner, draw)
+        ).set_thumbnail(url="https://i.imgur.com/NjrISNE.png")
 
     async def end_game(self, winner: Optional[discord.Member] = None, draw: bool = False):
         """Termine la partie et met à jour les scores."""
@@ -183,7 +181,7 @@ class Puissance4View(discord.ui.View):
 
         if self.message:
             await self.message.edit(
-                embed=self.get_embed(winner=winner, draw=draw), 
+                embed=self.get_embed(winner=winner, draw=draw),
                 view=self
             )
 
