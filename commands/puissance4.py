@@ -172,7 +172,6 @@ class Puissance4View(discord.ui.View):
             self.scores[winner.id] += 1
 
         self.endgame = True
-
         self.clear_items()
         self.add_item(RejouerButton(self))
 
