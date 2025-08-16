@@ -23,15 +23,15 @@ COLORS = {"p1": discord.Color.red(), "p2": discord.Color.blue()}
 # =========================================
 
 def create_board():
-    """Crée un plateau vide (6x7) avec des cercles blancs."""
+    """Crée une grille vide pour le jeu."""
     return [[EMPTY for _ in range(COLS)] for _ in range(ROWS)]
 
 def display_board(board):
-    """Retourne une chaîne représentant le plateau avec les émojis des colonnes."""
-    return "\n".join(" ".join(row) for row in board) + "\n" + " ".join(EMOJIS)
+    """Affiche la grille de jeu sous forme de chaîne de caractères."""
+    return " ".join(EMOJIS) + "\n" + "\n".join(" ".join(row) for row in board)
 
 def drop_piece(board, col, piece):
-    """Place un jeton dans la colonne choisie si possible. Retourne True si réussi."""
+    """Place une pièce dans la colonne spécifiée."""
     if not 0 <= col < COLS:
         return False
     for row in reversed(board):
@@ -42,35 +42,31 @@ def drop_piece(board, col, piece):
 
 def check_win(board, piece):
     """Vérifie si un joueur a aligné 4 jetons."""
-
-    # Vérification horizontale
+    # Horizontale
     for r in range(ROWS):
         for c in range(COLS - 3):
             if all(board[r][c + i] == piece for i in range(4)):
                 return True
-            
-    # Vérification verticale
+    # Verticale
     for r in range(ROWS - 3):
         for c in range(COLS):
             if all(board[r + i][c] == piece for i in range(4)):
                 return True
-            
-    # Vérification diagonale descendante
+    # Diagonale ↘
     for r in range(ROWS - 3):
         for c in range(COLS - 3):
             if all(board[r + i][c + i] == piece for i in range(4)):
-                return True
-            
-    # Vérification diagonale ascendante
+                return True 
+    # Diagonale ↙
     for r in range(3, ROWS):
         for c in range(COLS - 3):
             if all(board[r - i][c + i] == piece for i in range(4)):
                 return True
-            
+    # Si aucune condition n'est remplie
     return False
 
 def board_full(board):
-    """Vérifie si le plateau est rempli."""
+    """Vérifie si la grille est pleine."""
     return all(cell != EMPTY for row in board for cell in row)
 
 # =========================================
@@ -78,7 +74,7 @@ def board_full(board):
 # =========================================
 
 class Puissance4View(discord.ui.View):
-    """Vue pour gérer l'interaction du jeu Puissance 4."""
+    """Vue pour le jeu Puissance 4."""
     def __init__(self, p1: discord.Member, p2: discord.Member, scores: Optional[dict] = None):
         super().__init__(timeout=300)
         self.board = create_board()
@@ -87,13 +83,14 @@ class Puissance4View(discord.ui.View):
         self.colors = {p1.id: COLORS["p1"], p2.id: COLORS["p2"]}
         self.turn = random.choice(self.players)
         self.message: Optional[discord.Message] = None
+        self.last_move: Optional[int] = None
         self.scores = scores or {p1.id: 0, p2.id: 0}
         self.endgame = False
 
         self.init_buttons()
 
     def init_buttons(self):
-        """Réinitialise les boutons de colonnes."""
+        """Initialise les boutons pour chaque colonne."""
         self.clear_items()
         for i in range(COLS):
             row = 0 if i < 4 else 1
@@ -107,7 +104,7 @@ class Puissance4View(discord.ui.View):
         return discord.ButtonStyle.primary
 
     def update_buttons(self):
-        """Met à jour le style et l'état des boutons selon le tour et le plateau."""
+        """Met à jour l'état des boutons en fonction de la grille."""
         style = self.get_style()
         for button in self.children:
             if isinstance(button, Puissance4Button):
@@ -120,16 +117,28 @@ class Puissance4View(discord.ui.View):
             if isinstance(child, discord.ui.Button):
                 child.disabled = True
 
+    async def ensure_player(self, interaction: discord.Interaction) -> bool:
+        """Vérifie si l'utilisateur est un joueur de la partie."""
+        if interaction.user in self.players:
+            return True
+        await interaction.response.send_message(
+            "❌ Seuls les joueurs peuvent utiliser ce bouton.",
+            ephemeral=True
+        )
+        return False
+
     def get_board_display(self):
-        """Retourne une représentation textuelle du plateau."""
-        return display_board(self.board)
+        """Retourne l'affichage complet de la grille avec dernier coup."""
+        display = ""
+        if self.last_move is not None:
+            display += f"Dernier coup : {EMOJIS[self.last_move]}\n\n"
+        display += display_board(self.board)
+        return display
 
     def get_status_message(self, winner: Optional[discord.Member] = None, draw: bool = False):
-        """Retourne un message de statut selon l'état du jeu."""
-        if winner:
-            return f"🎉 {winner.mention} a gagné !"
-        if draw:
-            return "🤝 Match nul !"
+        """Retourne le message de statut du jeu."""
+        if winner: return f"🎉 {winner.mention} a gagné !"
+        if draw: return "🤝 Match nul !"
         return f"Tour de : {self.pieces[self.turn.id]} {self.turn.mention}"
 
     def get_score_display(self):
@@ -143,37 +152,34 @@ class Puissance4View(discord.ui.View):
 
     def get_color(self, winner: Optional[discord.Member] = None, draw: bool = False):
         """Retourne la couleur de l'embed selon l'état du jeu."""
-        if winner:
-            return discord.Color.green()
-        if draw:
-            return discord.Color.greyple()
+        if winner: return discord.Color.green()
+        if draw: return discord.Color.greyple()
         return self.colors[self.turn.id]
 
     def get_embed(self, winner: Optional[discord.Member] = None, draw: bool = False):
-        """Retourne l'embed à afficher pour le jeu."""
+        """Crée l'embed pour afficher l'état du jeu."""
         description = (
             f"{self.get_board_display()}\n\n"
             f"{self.get_status_message(winner, draw)}\n\n"
             f"{self.get_score_display()}"
         )
-        color = self.get_color(winner, draw)
         return (
             discord.Embed(
                 title="✦━─ Puissance 4 ─━✦", 
                 description=description, 
-                color=color
+                color=self.get_color(winner, draw)
             )
             .set_thumbnail(url="https://i.imgur.com/NjrISNE.png")
         )
 
     async def end_game(self, winner: Optional[discord.Member] = None, draw: bool = False):
-        """Termine la partie et met à jour l'embed."""
-        if winner:
-            self.scores[winner.id] += 1
+        """Termine la partie et met à jour les scores."""
+        if winner: self.scores[winner.id] += 1
 
         self.endgame = True
         self.clear_items()
         self.add_item(RejouerButton(self))
+        self.add_item(ArreterButton(self))
 
         if self.message:
             await self.message.edit(
@@ -182,9 +188,10 @@ class Puissance4View(discord.ui.View):
             )
 
     async def switch_turn(self):
-        """Change le tour au joueur suivant."""
+        """Change le tour du joueur."""
         self.turn = self.players[1 - self.players.index(self.turn)]
         self.update_buttons()
+
         if self.message:
             await self.message.edit(
                 embed=self.get_embed(), 
@@ -192,11 +199,11 @@ class Puissance4View(discord.ui.View):
             )
 
     async def play_turn(self, col: int):
-        """Joue un tour pour le joueur actuel."""
+        """Joue un coup pour le joueur actuel."""
         piece = self.pieces[self.turn.id]
         if not drop_piece(self.board, col, piece):
             return
-
+        self.last_move = col
         if check_win(self.board, piece):
             await self.end_game(winner=self.turn)
         elif board_full(self.board):
@@ -205,9 +212,8 @@ class Puissance4View(discord.ui.View):
             await self.switch_turn()
 
     async def on_timeout(self):
-        """Action à effectuer lorsque le temps est écoulé."""
+        """Gère le timeout de la vue."""
         self.disable_all_buttons()
-
         if self.message:
             await self.message.edit(view=self)
             if not self.endgame:
@@ -215,85 +221,96 @@ class Puissance4View(discord.ui.View):
                     "⌛ Temps écoulé ! La partie est terminée.",
                     reference=self.message
                 )
-
         self.stop()
 
 # =========================================
-# Classe des boutons pour les colonnes
+# Classe des boutons
 # =========================================
 
 class Puissance4Button(discord.ui.Button):
-    """Bouton pour jouer dans une colonne spécifique."""
+    """Bouton pour jouer un coup dans Puissance 4."""
     def __init__(self, col: int, game_view: Puissance4View, row: int = 0):
         super().__init__(emoji=EMOJIS[col], row=row)
         self.col = col
         self.p4view = game_view
 
     async def callback(self, interaction: discord.Interaction):
-        """Gestion du clic sur le bouton."""
-
         if self.p4view.endgame:
             await interaction.response.send_message(
                 "🚫 La partie est terminée.", 
                 ephemeral=True
             )
             return
-
+        
         if interaction.user != self.p4view.turn:
             await interaction.response.send_message(
                 "⏳ Ce n'est pas votre tour.", 
                 ephemeral=True
             )
             return
-
+        
         await interaction.response.defer()
         await self.p4view.play_turn(self.col)
 
-# =========================================
-# Classe du bouton pour Rejouer
-# =========================================
-
 class RejouerButton(discord.ui.Button):
-    """Bouton pour relancer une partie de Puissance 4."""
+    """Bouton pour rejouer une partie de Puissance 4."""
     def __init__(self, game_view: Puissance4View):
         super().__init__(label="🔄 Rejouer", style=discord.ButtonStyle.success)
         self.game_view = game_view
 
     async def callback(self, interaction: discord.Interaction):
-        if interaction.user not in self.game_view.players:
-            await interaction.response.send_message(
-                "❌ Seuls les joueurs de la partie peuvent relancer le jeu.", 
-                ephemeral=True
-            )
+        if not await self.game_view.ensure_player(interaction):
             return
-
+        
         new_view = Puissance4View(
-            self.game_view.players[0],
-            self.game_view.players[1],
+            self.game_view.players[0], 
+            self.game_view.players[1], 
             scores=self.game_view.scores
         )
         new_view.message = self.game_view.message
 
         await interaction.response.edit_message(
-            embed=new_view.get_embed(),
+            embed=new_view.get_embed(), 
             view=new_view
         )
 
+class ArreterButton(discord.ui.Button):
+    """Bouton pour arrêter la partie de Puissance 4."""
+    def __init__(self, game_view: Puissance4View):
+        super().__init__(label="⏹️ Arrêter", style=discord.ButtonStyle.danger)
+        self.game_view = game_view
+
+    async def callback(self, interaction: discord.Interaction):
+        if not await self.game_view.ensure_player(interaction):
+            return
+        
+        if self.game_view.message:
+            await interaction.response.edit_message(
+                embed=discord.Embed(
+                    title="✦━─ Puissance 4 ─━✦",
+                    description=f"⏹️ La partie a été arrêtée par {interaction.user.mention}.",
+                    color=discord.Color.dark_grey()
+                ).set_thumbnail(url="https://i.imgur.com/NjrISNE.png"),
+                view=None
+            )
+
+        self.game_view.stop()
+
 # =========================================
-# Cog Discord pour la commande /puissance4
+# Cog Discord
 # =========================================
 
 class Puissance4(commands.Cog):
-    """Cog pour gérer la commande /puissance4."""
+    """Cog pour le jeu Puissance 4."""
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @app_commands.command(name="puissance4", description="Lance une partie de Puissance 4.")
     @app_commands.describe(adversaire="L'utilisateur que vous souhaitez affronter.")
     async def p4(self, interaction: discord.Interaction, adversaire: discord.Member):
-        """Commande slash pour lancer une partie entre deux joueurs."""
         joueur1 = cast(discord.Member, interaction.user)
         joueur2 = adversaire
+
         if joueur1 == joueur2 or joueur1.bot or joueur2.bot:
             await interaction.response.send_message(
                 "❌ Impossible de jouer.", 
@@ -302,16 +319,13 @@ class Puissance4(commands.Cog):
             return
         
         view = Puissance4View(joueur1, joueur2)
-        await interaction.response.send_message(
-            embed=view.get_embed(), 
-            view=view
-        )
+        await interaction.response.send_message(embed=view.get_embed(), view=view)
         view.message = await interaction.original_response()
 
 # =========================================
-# Configuration du cog
+# Setup du cog
 # =========================================
 
 async def setup(bot: commands.Bot):
-    """Ajoute le cog Puissance4 au bot."""
+    """Fonction pour ajouter le cog à l'instance du bot."""
     await bot.add_cog(Puissance4(bot))
