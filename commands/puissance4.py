@@ -208,9 +208,9 @@ class Puissance4View(discord.ui.View):
             self.last_move = col
 
             if self.check_game_end(piece):
-                await self.end_game()
+                self.end_game()
             else:
-                await self.switch_turn()
+                self.switch_turn()
 
             await self._update_view()
 
@@ -224,7 +224,7 @@ class Puissance4View(discord.ui.View):
             return True
         return False
 
-    async def end_game(self) -> None:
+    def end_game(self) -> None:
         """Termine la partie et met à jour les scores."""
         if self.winner:
             self.scores[self.winner.id] += 1
@@ -232,7 +232,7 @@ class Puissance4View(discord.ui.View):
         self.clear_items()
         self.add_endgame_buttons()
 
-    async def switch_turn(self) -> None:
+    def switch_turn(self) -> None:
         """Change le tour du joueur."""
         self.current_player = self.players[1 - self.players.index(self.current_player)]
         self.update_buttons()
