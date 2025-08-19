@@ -82,15 +82,13 @@ class Puissance4View(discord.ui.View):
         super().__init__(timeout=300)
         self.board = Board()
         self.players = [p1, p2]
-        self.turn_index = random.choice([0, 1])
-        self.current_player = self.players[self.turn_index]
+        self.current_player = random.choice(self.players)
         self.pieces = {p1.id: PIECES["p1"], p2.id: PIECES["p2"]}
         self.colors = {p1.id: COLORS["p1"], p2.id: COLORS["p2"]}
         self.scores = scores or {p1.id: 0, p2.id: 0}
         self.message: Optional[discord.Message] = None
         self.last_move: Optional[int] = None
         self.winner: Optional[discord.Member] = None
-        self.endgame: bool = False
         self.draw: bool = False
         self.lock = asyncio.Lock()
         self.init_buttons()
@@ -227,14 +225,15 @@ class Puissance4View(discord.ui.View):
         """Termine la partie et met à jour les scores."""
         if self.winner:
             self.scores[self.winner.id] += 1
-        self.endgame = True
         self.clear_items()
         self.add_endgame_buttons()
 
     def switch_turn(self) -> None:
-        """Change le joueur actuel."""
-        self.turn_index = 1 - self.turn_index
-        self.current_player = self.players[self.turn_index]
+        """Change le tour du joueur."""
+        current_index = self.players.index(self.current_player)
+        next_index = 1 - current_index
+        self.current_player = self.players[next_index]
+
         self.update_buttons()
 
     async def _update_view(self) -> None:
@@ -325,6 +324,7 @@ class ArreterButton(discord.ui.Button):
 # =========================================
 
 class Puissance4(commands.Cog):
+    """Cog pour le jeu Puissance 4."""
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
