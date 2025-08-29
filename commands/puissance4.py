@@ -323,6 +323,7 @@ class EndgameView(discord.ui.View):
 
     async def on_timeout(self) -> None:
         """Désactive les boutons Rejouer/Arrêter en cas de timeout."""
+        self.stop()
         disable_all_buttons(self)
         if self.game_view.message:
             try:
