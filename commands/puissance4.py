@@ -176,11 +176,11 @@ class EmbedBuilder:
         return discord.Embed(title=title, description=description, color=color)
 
     @staticmethod
-    def invitation_embed(player1: discord.Member, player2: discord.Member) -> discord.Embed:
+    def invitation_embed(player1: discord.Member) -> discord.Embed:
         """Embed pour inviter un joueur à une partie."""
         return discord.Embed(
             title="Souhaitez-vous jouer au Puissance 4 ?",
-            description=f"{player1.mention} souhaite faire une partie avec {player2.mention}.",
+            description=f"{player1.mention} souhaite faire une partie avec vous.",
             color=discord.Color.blurple()
         )
 
@@ -483,7 +483,7 @@ class Puissance4(commands.Cog):
         
         await interaction.response.send_message(
             content=f"{player2.mention}",
-            embed=EmbedBuilder.invitation_embed(player1, player2),
+            embed=EmbedBuilder.invitation_embed(player1),
             view=view
         )
 
