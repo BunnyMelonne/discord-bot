@@ -148,7 +148,7 @@ class EmbedBuilder:
         return view.colors[view.current_player.id]
 
     @staticmethod
-    def embed(view: "Puissance4View") -> discord.Embed:
+    def game_embed(view: "Puissance4View") -> discord.Embed:
         """Construit l'embed principal du jeu."""
         description = (
             f"{EmbedBuilder.board_display(view)}\n\n"
@@ -293,7 +293,7 @@ class Puissance4View(discord.ui.View):
         """Met à jour le message Discord avec le plateau et la vue actuelle."""
         await edit_message(
             self.message,
-            embed=EmbedBuilder.embed(self),
+            embed=EmbedBuilder.game_embed(self),
             view=view or self
         )
 
@@ -373,7 +373,7 @@ class RejouerButton(discord.ui.Button):
             new_view.message = self.game_view.message
 
             await interaction.response.edit_message(
-                embed=EmbedBuilder.embed(new_view), 
+                embed=EmbedBuilder.game_embed(new_view), 
                 view=new_view
             )
 
@@ -428,17 +428,13 @@ class ConfirmationView(discord.ui.View):
         if self.confirmed:
             view = Puissance4View(self.player1, self.player2)
             view.message = self.message
-            embed = EmbedBuilder.embed(view)
+            embed = EmbedBuilder.game_embed(view)
         else:
             view = self
-            embed = self._get_rejection_embed()
+            embed = EmbedBuilder.rejection_embed(self.player2, self.confirmed)
             disable_all_buttons(self)
 
         await edit_message(self.message, content=None, embed=embed, view=view)
-
-    def _get_rejection_embed(self) -> discord.Embed:
-        """Retourne l'embed de refus ou d'expiration de l'invitation."""
-        return EmbedBuilder.rejection_embed(self.player2, self.confirmed)
 
     async def on_timeout(self):
         """Finalise automatiquement si le joueur invité n'a pas répondu."""
