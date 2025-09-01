@@ -445,9 +445,6 @@ class ConfirmationView(discord.ui.View):
         """Applique la décision finale et met à jour le message Discord."""
         self.stop()
 
-        if not self.message:
-            return
-
         if self.confirmed:
             view = Puissance4View(self.player1, self.player2)
             view.message = self.message
