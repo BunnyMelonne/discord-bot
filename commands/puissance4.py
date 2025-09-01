@@ -2,6 +2,7 @@
 # Importations
 # =========================================
 
+import traceback
 import random
 import asyncio
 from datetime import datetime, timedelta, timezone
@@ -15,13 +16,13 @@ from discord.ext import commands
 # =========================================
 
 async def edit_message(message: Optional[discord.Message], **kwargs) -> None:
-    """Édite un message Discord si celui-ci existe"""
     if not message:
         return
     try:
         await message.edit(**kwargs)
-    except (discord.NotFound, discord.Forbidden):
-        pass
+    except (discord.NotFound, discord.Forbidden, discord.HTTPException) as e:
+        print(f"Erreur en éditant le message : {e}")
+        traceback.print_exc()
 
 def disable_all_buttons(view: discord.ui.View) -> None:
     """Désactive tous les boutons d'une vue Discord."""
@@ -106,28 +107,35 @@ class EmbedBuilder:
         """Retourne le plateau sous forme de chaîne avec emojis."""
         header = " ".join(EMOJIS)
         arrows = " ".join("🔻" if view.last_move == i else SPACER for i in range(COLS))
-        grid_lines = [" ".join(row) for row in view.board.grid]
-        return "\n".join([header, arrows] + grid_lines)
+        grid = "\n".join(" ".join(row) for row in view.board.grid)
+
+        return f"{header}\n{arrows}\n{grid}"
 
     @staticmethod
     def status_message(view: "Puissance4View") -> str:
-        """Retourne le message de statut du jeu (tour, victoire ou match nul)."""
+        """Retourne le message de statut du jeu."""
         if view.winner:
-            base = f"🎉 {view.winner.mention} a gagné !"
-            if view.winner != view.current_player:
-                base += f"\n⏳ {view.current_player.mention} n'a pas joué à temps."
-            return base
+            timeout_msg = (
+                "⏳ Timeout. Partie terminée.\n" 
+                if view.winner != view.player_turn else ""
+            )
+            return f"{timeout_msg}**🎉 {view.winner.mention} a gagné !**"
+
         if view.draw:
             return "🤝 Match nul !"
-        return f"👉 Tour de {view.current_player.mention}"
+
+        piece = view.pieces[view.player_turn.id]
+        return f"{piece} Tour de {view.player_turn.mention}"
     
     @staticmethod
     def timeout_timestamp(view: "Puissance4View") -> str:
         """Retourne le timestamp Discord pour la fin du tour, vide si terminé."""
         if view.winner or view.draw:
             return ""
+        
         turn_end_time = datetime.now(timezone.utc) + timedelta(seconds=view.TURN_TIMEOUT)
         timestamp = int(turn_end_time.timestamp())
+
         return f"\n🕐 Fin du tour <t:{timestamp}:R>"
 
     @staticmethod
@@ -136,29 +144,39 @@ class EmbedBuilder:
         p1, p2 = view.players
         return (
             f"**🏆 Victoires :**\n"
-            f"{view.pieces[p1.id]} {p1.mention} : **{view.scores[p1.id]}**\n"
-            f"{view.pieces[p2.id]} {p2.mention} : **{view.scores[p2.id]}**"
+            f"- {p1.mention} : **{view.scores[p1.id]}**\n"
+            f"- {p2.mention} : **{view.scores[p2.id]}**"
         )
 
     @staticmethod
-    def color(view: "Puissance4View") -> discord.Color:
-        """Retourne la couleur de l'embed selon l'état du jeu."""
-        if view.winner: return discord.Color.green()
-        if view.draw: return discord.Color.greyple()
-        return view.colors[view.current_player.id]
+    def color_and_thumbnail(view: "Puissance4View") -> tuple[discord.Color, str]:
+        color = view.colors[view.player_turn.id]
+        thumbnail = view.player_turn.display_avatar.replace(size=32).url
+
+        if view.winner:
+            color = discord.Color.green()
+            thumbnail = "https://i.imgur.com/i0YzRG0.png"
+        elif view.draw:
+            color = discord.Color.greyple()
+            thumbnail = "https://i.imgur.com/kNr6XvV.png"
+
+        return color, thumbnail
 
     @staticmethod
     def game_embed(view: "Puissance4View") -> discord.Embed:
-        """Construit l'embed principal du jeu."""
-        description = (
-            f"{EmbedBuilder.board_display(view)}\n\n"
-            f"{EmbedBuilder.status_message(view)}"
-            f"{EmbedBuilder.timeout_timestamp(view)}\n\n"
-            f"{EmbedBuilder.score_display(view)}"
-        )
+        color, thumb = EmbedBuilder.color_and_thumbnail(view)
         return (
-            discord.Embed(description=description, color=EmbedBuilder.color(view))
-            .set_thumbnail(url="https://i.imgur.com/re2Z5fM.png")
+            discord.Embed(
+                title="✦━─ Puissance 4 ─━✦",
+                description=(
+                    f"{EmbedBuilder.board_display(view)}\n\n"
+                    f"{EmbedBuilder.status_message(view)}"
+                    f"{EmbedBuilder.timeout_timestamp(view)}\n\n"
+                    f"{EmbedBuilder.score_display(view)}"
+                ),
+                color=color,
+            )
+            .set_thumbnail(url=thumb)
         )
     
     @staticmethod
@@ -200,13 +218,18 @@ class ButtonManager:
             view.add_item(Puissance4Button(i, view, row=0 if i < 4 else 1))
 
     @staticmethod
-    def update_buttons(view: "Puissance4View"):
-        """Active/désactive et colore les boutons selon le joueur actuel et l'état du plateau."""
-        style = (
+    def get_button_style(view: "Puissance4View") -> discord.ButtonStyle:
+        """Retourne la couleur des boutons des colonnes selon le joueur actuel"""
+        return (
             discord.ButtonStyle.danger
-            if view.current_player == view.players[0]
+            if view.player_turn == view.players[0]
             else discord.ButtonStyle.primary
         )
+
+    @staticmethod
+    def update_buttons(view: "Puissance4View"):
+        """Active/désactive et colore les boutons selon le joueur actuel et l'état du plateau."""
+        style = ButtonManager.get_button_style(view)
         for button in view.children:
             if isinstance(button, Puissance4Button):
                 button.disabled = view.board.grid[0][button.col] != EMPTY_CELL
@@ -227,7 +250,7 @@ class Puissance4View(discord.ui.View):
 
         self.board = Board()
         self.players = [p1, p2]
-        self.current_player = random.choice(self.players)
+        self.player_turn = random.choice(self.players)
         self.pieces = {p1.id: PIECES["p1"], p2.id: PIECES["p2"]}
         self.colors = {p1.id: COLORS["p1"], p2.id: COLORS["p2"]}
         self.scores = scores or {p1.id: 0, p2.id: 0}
@@ -244,7 +267,7 @@ class Puissance4View(discord.ui.View):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Vérifie que seul le joueur du tour peut interagir avec la vue."""
-        if interaction.user != self.current_player:
+        if interaction.user != self.player_turn:
             await interaction.response.send_message(
                 "⏳ Ce n'est pas ton tour.", ephemeral=True
             )
@@ -254,7 +277,7 @@ class Puissance4View(discord.ui.View):
     async def play_turn(self, col: int):
         """Joue un tour pour le joueur courant dans la colonne spécifiée."""
         async with self.lock:
-            piece = self.pieces[self.current_player.id]
+            piece = self.pieces[self.player_turn.id]
             if not self.board.drop_piece(col, piece):
                 return
 
@@ -271,7 +294,7 @@ class Puissance4View(discord.ui.View):
     def _check_game_end(self, piece: str) -> bool:
         """Vérifie si la partie est terminée (victoire ou match nul)."""
         if self.board.check_win(piece):
-            self.winner = self.current_player
+            self.winner = self.player_turn
             return True
         if self.board.is_full():
             self.draw = True
@@ -287,7 +310,7 @@ class Puissance4View(discord.ui.View):
 
     def switch_turn(self):
         """Change le joueur courant pour le tour suivant."""
-        self.current_player = self.players[1 - self.players.index(self.current_player)]
+        self.player_turn = self.players[1 - self.players.index(self.player_turn)]
 
     async def refresh_message(self, view: Optional[discord.ui.View] = None):
         """Met à jour le message Discord avec le plateau et la vue actuelle."""
@@ -301,7 +324,7 @@ class Puissance4View(discord.ui.View):
         """Gère la fin du tour si le joueur n'a pas joué à temps."""
         async with self.lock:
             if not (self.winner or self.draw):
-                self.winner = next(p for p in self.players if p != self.current_player)
+                self.winner = next(p for p in self.players if p != self.player_turn)
             await self._end_game()
 
 
