@@ -14,8 +14,11 @@ if not mongo_uri:
     logger.error("❌ MONGO_URI non défini dans les variables d'environnement.")
 
 client = AsyncMongoClient(
-    mongo_uri, tls=True, tlsCAFile=certifi.where()
+    mongo_uri,
+    tls=True,
+    tlsCAFile=certifi.where()
 )
+
 db = client["my_discord_bot"]
 users_collection = db["users"]
 
