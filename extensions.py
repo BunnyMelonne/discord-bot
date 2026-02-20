@@ -7,5 +7,4 @@ EXTENSIONS = [
     "commands.sync_cmds",
     "commands.modal",
     "commands.puissance4",
-    "commands.components_v2",
 ]
